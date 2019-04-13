@@ -1,0 +1,6 @@
+include "/etc/rndc.key";
+options {
+        default-key "designate";
+        default-server {{ groups['bind'] | map('extract', hostvars, 'ansible_eth0' ) | map(attribute='ipv4.address') | list | join(',') }};
+        default-port 953;
+};

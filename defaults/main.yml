@@ -1,0 +1,4 @@
+---
+# defaults file for roles/bind_dns
+
+osp_ctl_ip: 192.168.1.9

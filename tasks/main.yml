@@ -1,0 +1,80 @@
+---
+# tasks file for roles/bind_dns
+
+- name: Install bind packages
+  yum:
+    name: bind
+    state: latest
+
+- name: Start and enable named service
+  service:
+    name: named
+    state: started
+    enabled: yes
+
+- name: populate named.conf
+  template:
+    src: named.conf.j2
+    dest: /etc/named.conf
+    force: yes
+    owner: root
+    group: named
+    mode: '0640'
+    setype: named_conf_t
+    validate: 'named-checkconf %s'
+  notify: restart bind
+
+- name: Ensure named directories have the right permisions
+  file:
+    path: /var/named
+    state: directory
+    owner: root
+    group: named
+    recurse: yes
+    mode: 0770
+
+- name: Generate rndc key
+  shell: rndc-confgen -a -k designate -c /etc/rndc.key -r /dev/urandom
+
+- name: Ensure the right permision
+  file:
+    path: /etc/rndc.key
+    state: file
+    owner: named
+    group: named
+    mode: 0600
+
+- name: Populate rndc.conf file
+  template:
+    src: rndc.conf.j2
+    dest: /etc/rndc.conf
+    force: yes
+    owner: named
+    group: named
+    mode: 0644
+
+
+- name: Fetch rndc files
+  fetch:
+    src: /etc/{{ item }}
+    dest: "{{ role_path }}/files/"
+    flat: yes
+  with_items:
+    - rndc.key
+    - rndc.conf
+
+- name: Copy rndc files to openstack controler(s)
+  copy:
+    src: "{{ item }}"
+    dest: /etc/
+  delegate_to: "{{ osp_ctl_ip }}"
+  with_items:
+    - rndc.key
+    - rndc.conf
+  notify: restart bind
+
+
+
+
+
+

@@ -1,0 +1,7 @@
+---
+# handlers file for roles/bind_dns
+
+- name: restart bind
+  service:
+    name: named
+    state: restarted
